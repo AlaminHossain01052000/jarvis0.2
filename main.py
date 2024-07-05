@@ -9,6 +9,7 @@ import time
 import datetime
 import pyjokes
 import wikipedia
+from openai import OpenAI
 
 recognizer = sr.Recognizer()
 engine = pyttsx3.init()
@@ -16,15 +17,36 @@ load_dotenv()
 
 newsApiKey = os.getenv("NEWSAPI_API_KEY")
 weatherApiKey = os.getenv("WEATHER_API_KEY")
+openaiApiKey=os.getenv("OPENAI_API_KEY")
+
 newsUrl = f"https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey={newsApiKey}"
 response = requests.get(newsUrl)
 data = response.json()
 
+
+#  open ai code starts here
+client = OpenAI(api_key=f"{openaiApiKey}")
+def askOpenAi(content):
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a voice assistant like Alexa or Siri. Provide answers in short.I am using you as a virtual assistant. So don't provide any symbol,italic or bold text.Just give the answers"},
+            {"role": "user", "content": f"{content}"}
+        ]
+    )
+    response= completion.choices[0].message.content
+    
+    return response
+# open ai code ends here
 def speak(text):
     engine.say(text)
     engine.runAndWait()
 
+
+
 def processCommand(command):
+    print(f"Your Question: {command}")
+    print("Jarvise's response: ",end="")
     if "open google" in command.lower():
         webbrowser.open("https://www.google.com/")
     elif "open facebook" in command.lower():
@@ -81,6 +103,14 @@ def processCommand(command):
         # print(search_query)
         summary = wikipedia.summary(search_query, sentences=2)
         speak(summary)
+    else :
+        # question = command.replace("question", "").replace("ask", "").strip()
+        
+        
+        
+        answer = askOpenAi(command)
+        print(answer)
+        speak(answer)
 
 if __name__ == "__main__":
     print("Initializing Jarvis...")
